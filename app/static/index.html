@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Reconhecimento Facial</title>
+        <link rel="stylesheet" href="/static/css/style.css">
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>👤 Sistema de Reconhecimento Facial</h1>
+            <p>Cadastre e reconheça usuários através de reconhecimento facial</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('cadastro')">📝 Cadastro</button>
+            <button class="tab" onclick="showTab('reconhecimento')">🔍 Reconhecimento</button>
+        </div>
+
+        <!-- Tab Cadastro -->
+        <div id="cadastro" class="tab-content active">
+            <form id="cadastroForm">
+                <div class="form-group">
+                    <label for="cpf">CPF:</label>
+                    <input type="text" id="cpf" placeholder="000.000.000-00" maxlength="14" required>
+                </div>
+
+                <div class="camera-container">
+                    <video id="video" autoplay muted></video>
+                    <div class="camera-overlay"></div>
+                </div>
+
+                <div class="button-group">
+                    <button type="button" class="btn btn-primary" id="capture">📸 Capturar Foto</button>
+                    <button type="button" class="btn btn-secondary" id="resetCamera">🔄 Reiniciar Câmera</button>
+                </div>
+
+                <div class="preview-container" id="previewContainer" style="display: none;">
+                    <h3>Foto Capturada:</h3>
+                    <img id="fotoPreview" alt="Preview da foto">
+                </div>
+
+                <button type="submit" class="btn btn-success" id="submitCadastro" disabled>
+                    💾 Cadastrar Usuário
+                </button>
+            </form>
+        </div>
+
+        <!-- Tab Reconhecimento -->
+        <div id="reconhecimento" class="tab-content">
+            <div class="camera-container">
+                <video id="videoRecon" autoplay muted></video>
+                <div class="camera-overlay"></div>
+            </div>
+
+            <div class="button-group">
+                <button type="button" class="btn btn-primary" id="reconhecer">🔍 Reconhecer Rosto</button>
+                <button type="button" class="btn btn-secondary" id="resetCameraRecon">🔄 Reiniciar Câmera</button>
+            </div>
+
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Aguardando reconhecimento...</span>
+            </div>
+        </div>
+
+        <div id="mensagem"></div>
+    </div>
+
+        <script src="/static/js/app.js"></script>
+</body>
+</html> 

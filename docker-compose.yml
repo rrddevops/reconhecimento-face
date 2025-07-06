@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: reconhecimento_postgres
+    environment:
+      POSTGRES_DB: reconhecimento
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - reconhecimento_network
+
+  app:
+    build: .
+    container_name: reconhecimento_app
+    ports:
+      - "8001:8000"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/reconhecimento
+      WEBHOOK_URL: http://192.168.5.67:8000/webhook
+      WEBHOOK_LOGGING: "true"
+      WEBHOOK_TIMEOUT: "10"
+    depends_on:
+      - postgres
+    networks:
+      - reconhecimento_network
+    volumes:
+      - ./app:/app/app
+
+volumes:
+  postgres_data:
+
+networks:
+  reconhecimento_network:
+    driver: bridge 

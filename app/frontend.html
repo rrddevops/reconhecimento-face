@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Cadastro Facial</title>
+</head>
+<body>
+    <h2>Cadastro Facial</h2>
+    <form id="cadastroForm">
+        <label>CPF: <input type="text" id="cpf" required></label><br><br>
+        <video id="video" width="320" height="240" autoplay></video><br>
+        <button type="button" id="capture">Capturar Foto</button><br><br>
+        <button type="button" id="reconhecer">Reconhecer Rosto</button><br><br>
+        <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+        <img id="fotoPreview" style="display:none;"/>
+        <br>
+        <button type="submit">Enviar Cadastro</button>
+    </form>
+    <div id="mensagem"></div>
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const fotoPreview = document.getElementById('fotoPreview');
+        const mensagem = document.getElementById('mensagem');
+        let imagemBase64 = "";
+
+        // Acessar webcam
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            });
+
+        // Capturar foto
+        document.getElementById('capture').onclick = function() {
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            imagemBase64 = canvas.toDataURL('image/jpeg').split(',')[1];
+            fotoPreview.src = 'data:image/jpeg;base64,' + imagemBase64;
+            fotoPreview.style.display = 'block';
+        };
+
+        // Enviar cadastro
+        document.getElementById('cadastroForm').onsubmit = async function(e) {
+            e.preventDefault();
+            const cpf = document.getElementById('cpf').value;
+            if (!imagemBase64) {
+                mensagem.innerText = 'Capture uma foto antes de enviar!';
+                return;
+            }
+            const resp = await fetch('http://localhost:8000/cadastro', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cpf, imagem_base64: imagemBase64 })
+            });
+            const data = await resp.json();
+            mensagem.innerText = data.status === 'recebido' ? 'Cadastro enviado com sucesso!' : 'Erro ao cadastrar.';
+        };
+
+        // Reconhecimento facial
+        document.getElementById('reconhecer').onclick = async function() {
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imagemBase64Recon = canvas.toDataURL('image/jpeg').split(',')[1];
+            mensagem.innerText = 'Reconhecendo...';
+            const resp = await fetch('http://localhost:8000/reconhecer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imagem_base64: imagemBase64Recon })
+            });
+            const data = await resp.json();
+            if (data.status === 'match') {
+                mensagem.innerText = 'Reconhecido! CPF: ' + data.cpf;
+            } else if (data.status === 'nao_encontrado') {
+                mensagem.innerText = 'Rosto não encontrado no banco.';
+            } else {
+                mensagem.innerText = data.mensagem || 'Erro no reconhecimento.';
+            }
+        };
+    </script>
+</body>
+</html> 
