@@ -17,10 +17,10 @@ services:
     build: .
     container_name: reconhecimento_app
     ports:
-      - "8001:8000"
+      - "8002:8000"
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/reconhecimento
-      WEBHOOK_URL: http://192.168.5.67:8000/webhook
+      WEBHOOK_URL: http://172.16.10.152:8000/webhook
       WEBHOOK_LOGGING: "true"
       WEBHOOK_TIMEOUT: "10"
     depends_on:

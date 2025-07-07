@@ -4,14 +4,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Reconhecimento Facial</title>
-        <link rel="stylesheet" href="/static/css/style.css">
-    </style>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <!-- Face-API.js para detecção facial -->
+    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <!-- Fallback para face-api.js -->
+    <script>
+        // Fallback se a CDN principal falhar
+        window.addEventListener('load', function() {
+            if (typeof faceapi === 'undefined') {
+                console.log('Tentando carregar face-api.js de CDN alternativa...');
+                const script = document.createElement('script');
+                script.src = 'https://unpkg.com/face-api.js@0.22.2/dist/face-api.min.js';
+                script.onload = function() {
+                    console.log('Face-API.js carregado via fallback');
+                };
+                script.onerror = function() {
+                    console.error('Falha ao carregar face-api.js de todas as fontes');
+                };
+                document.head.appendChild(script);
+            }
+        });
+    </script>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>👤 Sistema de Reconhecimento Facial</h1>
             <p>Cadastre e reconheça usuários através de reconhecimento facial</p>
+        </div>
+
+        <div class="nav-buttons" style="display: flex; justify-content: center; gap: 20px; margin-bottom: 30px;">
+            <a href="/consulta" class="btn btn-secondary" style="text-decoration: none;">📋 Consultar Cadastros</a>
+            <a href="/diagnostico" class="btn btn-secondary" style="text-decoration: none;">🔧 Diagnóstico</a>
+            <a href="/teste-deteccao" class="btn btn-secondary" style="text-decoration: none;">🤖 Teste Detecção</a>
+            <a href="/teste-navegacao" class="btn btn-secondary" style="text-decoration: none;">🧭 Teste Navegação</a>
         </div>
 
         <div class="tabs">
@@ -29,7 +55,11 @@
 
                 <div class="camera-container">
                     <video id="video" autoplay muted></video>
+                    <canvas id="canvasCadastro" class="face-canvas"></canvas>
                     <div class="camera-overlay"></div>
+                    <div class="face-indicator" id="faceIndicatorCadastro">
+                        <div class="face-status">🔍 Procurando rosto...</div>
+                    </div>
                 </div>
 
                 <div class="button-group">
@@ -50,13 +80,22 @@
 
         <!-- Tab Reconhecimento -->
         <div id="reconhecimento" class="tab-content">
+            <div class="info-box">
+                <p>💡 <strong>Reconhecimento Automático:</strong> O sistema detecta automaticamente rostos e faz o reconhecimento sem necessidade de clique no botão.</p>
+                <p>⚠️ <strong>Modo Manual:</strong> Se a detecção automática não estiver disponível, use o botão "Reconhecimento Manual" abaixo.</p>
+            </div>
+            
             <div class="camera-container">
                 <video id="videoRecon" autoplay muted></video>
+                <canvas id="canvasRecon" class="face-canvas"></canvas>
                 <div class="camera-overlay"></div>
+                <div class="face-indicator" id="faceIndicatorRecon">
+                    <div class="face-status">🔍 Procurando rosto...</div>
+                </div>
             </div>
 
             <div class="button-group">
-                <button type="button" class="btn btn-primary" id="reconhecer">🔍 Reconhecer Rosto</button>
+                <button type="button" class="btn btn-primary" id="reconhecer">🔍 Reconhecimento Manual</button>
                 <button type="button" class="btn btn-secondary" id="resetCameraRecon">🔄 Reiniciar Câmera</button>
             </div>
 
@@ -69,6 +108,6 @@
         <div id="mensagem"></div>
     </div>
 
-        <script src="/static/js/app.js"></script>
+    <script src="/static/js/app.js"></script>
 </body>
 </html> 

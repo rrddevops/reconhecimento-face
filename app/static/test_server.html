@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste de Conexão</title>
+</head>
+<body>
+    <h1>Teste de Conexão com Servidor</h1>
+    
+    <button onclick="testStatus()">Testar Status</button>
+    <button onclick="testReconhecer()">Testar Reconhecimento</button>
+    <button onclick="testCadastro()">Testar Cadastro</button>
+    
+    <div id="result"></div>
+    
+    <script>
+        async function testStatus() {
+            try {
+                const response = await fetch('http://localhost:8002/status');
+                const data = await response.json();
+                document.getElementById('result').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('result').innerHTML = '<p style="color: red;">Erro: ' + error.message + '</p>';
+            }
+        }
+        
+        async function testReconhecer() {
+            try {
+                const response = await fetch('http://localhost:8002/reconhecer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ imagem_base64: 'teste' })
+                });
+                const data = await response.json();
+                document.getElementById('result').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('result').innerHTML = '<p style="color: red;">Erro: ' + error.message + '</p>';
+            }
+        }
+        
+        async function testCadastro() {
+            try {
+                const response = await fetch('http://localhost:8002/cadastro', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        cpf: '12345678901',
+                        imagem_base64: 'teste' 
+                    })
+                });
+                const data = await response.json();
+                document.getElementById('result').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('result').innerHTML = '<p style="color: red;">Erro: ' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html> 

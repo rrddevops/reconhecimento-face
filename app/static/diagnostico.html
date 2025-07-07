@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico - Sistema de Reconhecimento Facial</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .diagnostico-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .nav-button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .nav-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        
+        .test-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .test-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .test-content {
+            padding: 20px;
+        }
+        
+        .test-result {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        
+        .test-result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .test-result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .test-result.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .test-result.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .status-icon {
+            font-size: 20px;
+        }
+        
+        .test-button {
+            padding: 8px 16px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .test-button:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+        
+        .test-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .log-area {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+    </style>
+</head>
+<body>
+    <div class="diagnostico-container">
+        <div class="header">
+            <h1>🔧 Diagnóstico do Sistema</h1>
+            <p>Verificação completa do sistema de reconhecimento facial</p>
+        </div>
+        
+        <div class="nav-buttons">
+            <a href="index.html" class="nav-button">🏠 Página Principal</a>
+            <a href="consulta.html" class="nav-button">📋 Consultar Cadastros</a>
+            <button class="nav-button" onclick="executarDiagnosticoCompleto()">🔄 Executar Diagnóstico Completo</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        // Determinar a porta do servidor baseado no ambiente
+        const isDocker = window.location.hostname === 'localhost' && window.location.port === '8000';
+        const serverPort = isDocker ? '8000' : '8002';
+        const serverUrl = `http://localhost:${serverPort}`;
+        
+        let testResults = [];
+        
+        function addResult(section, status, message, details = '') {
+            const statusClass = status === 'success' ? 'success' : 
+                              status === 'error' ? 'error' : 
+                              status === 'warning' ? 'warning' : 'info';
+            
+            const statusIcon = status === 'success' ? '✅' : 
+                             status === 'error' ? '❌' : 
+                             status === 'warning' ? '⚠️' : 'ℹ️';
+            
+            testResults.push({ section, status, message, details });
+            
+            const resultsDiv = document.getElementById('results');
+            const sectionDiv = resultsDiv.querySelector(`[data-section="${section}"]`) || createSection(section);
+            
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${statusClass}`;
+            resultDiv.innerHTML = `
+                <span class="status-icon">${statusIcon}</span>
+                <span>${message}</span>
+            `;
+            
+            if (details) {
+                resultDiv.innerHTML += `<div class="log-area">${details}</div>`;
+            }
+            
+            sectionDiv.querySelector('.test-content').appendChild(resultDiv);
+        }
+        
+        function createSection(sectionName) {
+            const resultsDiv = document.getElementById('results');
+            const sectionDiv = document.createElement('div');
+            sectionDiv.className = 'test-section';
+            sectionDiv.setAttribute('data-section', sectionName);
+            
+            const sectionTitles = {
+                'server': '🌐 Servidor Backend',
+                'face-api': '🤖 Face-API.js',
+                'camera': '📹 Câmera',
+                'database': '🗄️ Banco de Dados',
+                'endpoints': '🔗 Endpoints da API',
+                'navigation': '🧭 Navegação'
+            };
+            
+            sectionDiv.innerHTML = `
+                <div class="test-header">${sectionTitles[sectionName] || sectionName}</div>
+                <div class="test-content"></div>
+            `;
+            
+            resultsDiv.appendChild(sectionDiv);
+            return sectionDiv;
+        }
+        
+        async function testServer() {
+            addResult('server', 'info', 'Testando conectividade com o servidor...');
+            
+            try {
+                const response = await fetch(`${serverUrl}/`, { 
+                    method: 'GET',
+                    timeout: 5000 
+                });
+                
+                if (response.ok) {
+                    addResult('server', 'success', `Servidor respondendo na porta ${serverPort}`);
+                } else {
+                    addResult('server', 'error', `Servidor retornou status ${response.status}`);
+                }
+            } catch (error) {
+                addResult('server', 'error', `Erro de conexão: ${error.message}`, 
+                    `URL testada: ${serverUrl}<br>Verifique se o servidor está rodando.`);
+            }
+        }
+        
+        async function testFaceAPI() {
+            addResult('face-api', 'info', 'Verificando Face-API.js...');
+            
+            if (typeof faceapi === 'undefined') {
+                addResult('face-api', 'error', 'Face-API.js não está carregado', 
+                    'A biblioteca face-api.js não foi carregada. Isso pode ser devido a:<br>' +
+                    '• Problemas de conectividade com a internet<br>' +
+                    '• Bloqueio de CDN pelo navegador<br>' +
+                    '• Erro no carregamento da biblioteca');
+                return;
+            }
+            
+            addResult('face-api', 'success', 'Face-API.js carregado');
+            
+            try {
+                // Testar carregamento de modelos
+                addResult('face-api', 'info', 'Testando carregamento de modelos...');
+                
+                await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js/weights');
+                addResult('face-api', 'success', 'Modelo TinyFaceDetector carregado com sucesso');
+                
+            } catch (error) {
+                addResult('face-api', 'warning', 'Erro ao carregar modelos', 
+                    `Erro: ${error.message}<br>O sistema funcionará em modo manual.`);
+            }
+        }
+        
+        async function testCamera() {
+            addResult('camera', 'info', 'Testando acesso à câmera...');
+            
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    } 
+                });
+                
+                addResult('camera', 'success', 'Câmera acessível');
+                
+                // Parar o stream
+                stream.getTracks().forEach(track => track.stop());
+                
+            } catch (error) {
+                addResult('camera', 'error', 'Erro ao acessar câmera', 
+                    `Erro: ${error.message}<br>Verifique as permissões do navegador.`);
+            }
+        }
+        
+        async function testDatabase() {
+            addResult('database', 'info', 'Testando conexão com banco de dados...');
+            
+            try {
+                const response = await fetch(`${serverUrl}/usuarios`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult('database', 'success', `Banco de dados acessível - ${data.total} usuários cadastrados`);
+                } else {
+                    addResult('database', 'error', `Erro no banco de dados: ${response.status}`);
+                }
+            } catch (error) {
+                addResult('database', 'error', 'Erro ao conectar com banco de dados', 
+                    `Erro: ${error.message}`);
+            }
+        }
+        
+        async function testEndpoints() {
+            addResult('endpoints', 'info', 'Testando endpoints da API...');
+            
+            const endpoints = [
+                { path: '/', name: 'Página Principal' },
+                { path: '/consulta', name: 'Página de Consulta' },
+                { path: '/usuarios', name: 'Listar Usuários' },
+                { path: '/cadastro', name: 'Cadastro (POST)' },
+                { path: '/reconhecer', name: 'Reconhecimento (POST)' }
+            ];
+            
+            for (const endpoint of endpoints) {
+                try {
+                    const method = endpoint.path.includes('cadastro') || endpoint.path.includes('reconhecer') ? 'POST' : 'GET';
+                    const response = await fetch(`${serverUrl}${endpoint.path}`, { 
+                        method,
+                        headers: method === 'POST' ? { 'Content-Type': 'application/json' } : {},
+                        body: method === 'POST' ? JSON.stringify({}) : undefined
+                    });
+                    
+                    if (response.ok || response.status === 405) { // 405 = Method Not Allowed (normal para GET em POST endpoints)
+                        addResult('endpoints', 'success', `${endpoint.name}: OK`);
+                    } else {
+                        addResult('endpoints', 'warning', `${endpoint.name}: ${response.status}`);
+                    }
+                } catch (error) {
+                    addResult('endpoints', 'error', `${endpoint.name}: Erro`, error.message);
+                }
+            }
+        }
+        
+        async function testNavigation() {
+            addResult('navigation', 'info', 'Testando navegação...');
+            
+            // Testar se as páginas existem
+            const pages = [
+                { url: 'index.html', name: 'Página Principal' },
+                { url: 'consulta.html', name: 'Página de Consulta' }
+            ];
+            
+            for (const page of pages) {
+                try {
+                    const response = await fetch(page.url);
+                    if (response.ok) {
+                        addResult('navigation', 'success', `${page.name}: Acessível`);
+                    } else {
+                        addResult('navigation', 'error', `${page.name}: ${response.status}`);
+                    }
+                } catch (error) {
+                    addResult('navigation', 'error', `${page.name}: Erro`, error.message);
+                }
+            }
+        }
+        
+        async function executarDiagnosticoCompleto() {
+            // Limpar resultados anteriores
+            document.getElementById('results').innerHTML = '';
+            testResults = [];
+            
+            addResult('general', 'info', '🚀 Iniciando diagnóstico completo...');
+            
+            // Executar testes em sequência
+            await testServer();
+            await testFaceAPI();
+            await testCamera();
+            await testDatabase();
+            await testEndpoints();
+            await testNavigation();
+            
+            // Resumo final
+            const successCount = testResults.filter(r => r.status === 'success').length;
+            const errorCount = testResults.filter(r => r.status === 'error').length;
+            const warningCount = testResults.filter(r => r.status === 'warning').length;
+            
+            addResult('general', 'info', `📊 Resumo: ${successCount} ✅ | ${warningCount} ⚠️ | ${errorCount} ❌`);
+            
+            if (errorCount === 0) {
+                addResult('general', 'success', '🎉 Sistema funcionando corretamente!');
+            } else {
+                addResult('general', 'warning', '⚠️ Alguns problemas foram detectados. Verifique os resultados acima.');
+            }
+        }
+        
+        // Executar diagnóstico automaticamente quando a página carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(executarDiagnosticoCompleto, 1000);
+        });
+    </script>
+</body>
+</html> 

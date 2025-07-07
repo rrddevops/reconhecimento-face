@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Navegação - Sistema de Reconhecimento Facial</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .teste-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .nav-button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .nav-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        
+        .test-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .test-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .test-content {
+            padding: 20px;
+        }
+        
+        .test-result {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        
+        .test-result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .test-result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .test-result.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .test-result.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .url-test {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        
+        .url-test a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        
+        .url-test a:hover {
+            text-decoration: underline;
+        }
+        
+        .test-button {
+            padding: 8px 16px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .test-button:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="teste-container">
+        <div class="header">
+            <h1>🧭 Teste de Navegação</h1>
+            <p>Verificação de links e navegação do sistema</p>
+        </div>
+        
+        <div class="nav-buttons">
+            <a href="/" class="nav-button">🏠 Página Principal</a>
+            <a href="/consulta" class="nav-button">📋 Consultar Cadastros</a>
+            <a href="/diagnostico" class="nav-button">🔧 Diagnóstico</a>
+            <a href="/teste-deteccao" class="nav-button">🤖 Teste Detecção</a>
+            <button class="nav-button" onclick="executarTestes()">🔄 Executar Testes</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        // Determinar a porta do servidor baseado no ambiente
+        const isDocker = window.location.hostname === 'localhost' && window.location.port === '8000';
+        const serverPort = isDocker ? '8000' : '8002';
+        const serverUrl = `http://localhost:${serverPort}`;
+        
+        function addResult(section, status, message, details = '') {
+            const statusClass = status === 'success' ? 'success' : 
+                              status === 'error' ? 'error' : 
+                              status === 'warning' ? 'warning' : 'info';
+            
+            const statusIcon = status === 'success' ? '✅' : 
+                             status === 'error' ? '❌' : 
+                             status === 'warning' ? '⚠️' : 'ℹ️';
+            
+            const resultsDiv = document.getElementById('results');
+            const sectionDiv = resultsDiv.querySelector(`[data-section="${section}"]`) || createSection(section);
+            
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${statusClass}`;
+            resultDiv.innerHTML = `
+                <span class="status-icon">${statusIcon}</span>
+                <span>${message}</span>
+            `;
+            
+            if (details) {
+                resultDiv.innerHTML += `<div class="url-test">${details}</div>`;
+            }
+            
+            sectionDiv.querySelector('.test-content').appendChild(resultDiv);
+        }
+        
+        function createSection(sectionName) {
+            const resultsDiv = document.getElementById('results');
+            const sectionDiv = document.createElement('div');
+            sectionDiv.className = 'test-section';
+            sectionDiv.setAttribute('data-section', sectionName);
+            
+            const sectionTitles = {
+                'navigation': '🧭 Teste de Navegação',
+                'endpoints': '🔗 Teste de Endpoints',
+                'links': '🔗 Teste de Links'
+            };
+            
+            sectionDiv.innerHTML = `
+                <div class="test-header">${sectionTitles[sectionName] || sectionName}</div>
+                <div class="test-content"></div>
+            `;
+            
+            resultsDiv.appendChild(sectionDiv);
+            return sectionDiv;
+        }
+        
+        async function testNavigation() {
+            addResult('navigation', 'info', 'Testando navegação entre páginas...');
+            
+            const pages = [
+                { url: '/', name: 'Página Principal', expected: 'Sistema de Reconhecimento Facial' },
+                { url: '/consulta', name: 'Consulta de Cadastros', expected: 'Consulta de Cadastros' },
+                { url: '/diagnostico', name: 'Diagnóstico', expected: 'Diagnóstico do Sistema' },
+                { url: '/teste-deteccao', name: 'Teste de Detecção', expected: 'Teste de Detecção Automática' }
+            ];
+            
+            for (const page of pages) {
+                try {
+                    const response = await fetch(page.url);
+                    
+                    if (response.ok) {
+                        const text = await response.text();
+                        if (text.includes(page.expected)) {
+                            addResult('navigation', 'success', `${page.name}: Acessível`);
+                        } else {
+                            addResult('navigation', 'warning', `${page.name}: Acessível mas conteúdo inesperado`);
+                        }
+                    } else {
+                        addResult('navigation', 'error', `${page.name}: Erro ${response.status}`);
+                    }
+                } catch (error) {
+                    addResult('navigation', 'error', `${page.name}: Erro de conexão`, error.message);
+                }
+            }
+        }
+        
+        async function testEndpoints() {
+            addResult('endpoints', 'info', 'Testando endpoints da API...');
+            
+            const endpoints = [
+                { path: '/', name: 'Página Principal' },
+                { path: '/consulta', name: 'Página de Consulta' },
+                { path: '/diagnostico', name: 'Página de Diagnóstico' },
+                { path: '/teste-deteccao', name: 'Página de Teste' },
+                { path: '/usuarios', name: 'Endpoint de Usuários' }
+            ];
+            
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(`${serverUrl}${endpoint.path}`);
+                    
+                    if (response.ok) {
+                        addResult('endpoints', 'success', `${endpoint.name}: OK`);
+                    } else {
+                        addResult('endpoints', 'error', `${endpoint.name}: ${response.status}`);
+                    }
+                } catch (error) {
+                    addResult('endpoints', 'error', `${endpoint.name}: Erro`, error.message);
+                }
+            }
+        }
+        
+        function testLinks() {
+            addResult('links', 'info', 'Verificando links na página principal...');
+            
+            const links = [
+                { href: '/consulta', text: '📋 Consultar Cadastros' },
+                { href: '/diagnostico', text: '🔧 Diagnóstico' },
+                { href: '/teste-deteccao', text: '🤖 Teste Detecção' },
+                { href: '/teste-navegacao', text: '🧭 Teste Navegação' }
+            ];
+            
+            addResult('links', 'info', 'Links disponíveis na página principal:', 
+                links.map(link => `<a href="${link.href}" target="_blank">${link.text}</a>`).join('<br>'));
+            
+            addResult('links', 'info', 'URLs diretas para teste:', 
+                links.map(link => `<a href="${link.href}" target="_blank">${window.location.origin}${link.href}</a>`).join('<br>'));
+        }
+        
+        async function executarTestes() {
+            // Limpar resultados anteriores
+            document.getElementById('results').innerHTML = '';
+            
+            addResult('general', 'info', '🚀 Iniciando testes de navegação...');
+            
+            // Executar testes
+            await testNavigation();
+            await testEndpoints();
+            testLinks();
+            
+            addResult('general', 'info', '✅ Testes de navegação concluídos!');
+        }
+        
+        // Executar testes automaticamente quando a página carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(executarTestes, 1000);
+        });
+    </script>
+</body>
+</html> 

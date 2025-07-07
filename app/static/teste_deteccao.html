@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Detecção Automática - Sistema de Reconhecimento Facial</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .teste-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .nav-button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .nav-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        
+        .status-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .status-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .status-content {
+            padding: 20px;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        
+        .status-item.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-item.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status-item.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .status-item.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .camera-container {
+            position: relative;
+            width: 100%;
+            max-width: 640px;
+            margin: 0 auto;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .camera-container video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .camera-container canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .face-indicator {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 10;
+        }
+        
+        .face-indicator.detected {
+            background: rgba(40, 167, 69, 0.9);
+        }
+        
+        .face-indicator.processing {
+            background: rgba(255, 193, 7, 0.9);
+        }
+        
+        .log-area {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        
+        .test-button {
+            padding: 10px 20px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .test-button:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+        
+        .test-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="teste-container">
+        <div class="header">
+            <h1>🤖 Teste de Detecção Automática</h1>
+            <p>Diagnóstico completo da detecção facial automática</p>
+        </div>
+        
+        <div class="nav-buttons">
+            <a href="index.html" class="nav-button">🏠 Página Principal</a>
+            <a href="diagnostico.html" class="nav-button">🔧 Diagnóstico Completo</a>
+            <button class="nav-button" onclick="iniciarTeste()">🔄 Iniciar Teste</button>
+        </div>
+        
+        <div class="status-panel">
+            <div class="status-header">
+                📊 Status da Detecção Automática
+            </div>
+            <div class="status-content" id="status-content">
+                <div class="status-item info">
+                    <span>⏳</span>
+                    <span>Aguardando inicialização...</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="camera-container">
+            <video id="video" autoplay muted></video>
+            <canvas id="canvas" class="face-canvas"></canvas>
+            <div class="face-indicator" id="faceIndicator">
+                <div class="face-status">🔍 Inicializando...</div>
+            </div>
+        </div>
+        
+        <div class="status-panel">
+            <div class="status-header">
+                📝 Log de Eventos
+            </div>
+            <div class="status-content">
+                <div class="log-area" id="log-area">
+                    Iniciando teste de detecção automática...
+                </div>
+                <button class="test-button" onclick="limparLog()">🗑️ Limpar Log</button>
+                <button class="test-button" onclick="exportarLog()">📥 Exportar Log</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStream = null;
+        let faceDetectionInterval = null;
+        let logMessages = [];
+        
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            logMessages.push(logEntry);
+            
+            const logArea = document.getElementById('log-area');
+            logArea.innerHTML += logEntry + '\n';
+            logArea.scrollTop = logArea.scrollHeight;
+            
+            console.log(logEntry);
+        }
+        
+        function updateStatus(message, type = 'info') {
+            const statusContent = document.getElementById('status-content');
+            const statusItem = document.createElement('div');
+            statusItem.className = `status-item ${type}`;
+            
+            const icon = type === 'success' ? '✅' : 
+                        type === 'error' ? '❌' : 
+                        type === 'warning' ? '⚠️' : 'ℹ️';
+            
+            statusItem.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+            statusContent.appendChild(statusItem);
+        }
+        
+        function limparLog() {
+            logMessages = [];
+            document.getElementById('log-area').innerHTML = '';
+        }
+        
+        function exportarLog() {
+            const logText = logMessages.join('\n');
+            const blob = new Blob([logText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'detection-test-log.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        async function initCamera() {
+            try {
+                addLog('Iniciando acesso à câmera...');
+                
+                if (currentStream) {
+                    currentStream.getTracks().forEach(track => track.stop());
+                }
+
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
+                        facingMode: 'user'
+                    } 
+                });
+                
+                const video = document.getElementById('video');
+                video.srcObject = stream;
+                currentStream = stream;
+                
+                addLog('Câmera inicializada com sucesso');
+                updateStatus('Câmera conectada', 'success');
+                
+                return true;
+            } catch (error) {
+                addLog(`Erro ao acessar câmera: ${error.message}`, 'error');
+                updateStatus('Erro na câmera', 'error');
+                return false;
+            }
+        }
+        
+        async function initFaceAPI() {
+            try {
+                addLog('Verificando Face-API.js...');
+                
+                if (typeof faceapi === 'undefined') {
+                    addLog('Face-API.js não encontrado, tentando carregar...');
+                    updateStatus('Face-API.js não encontrado', 'warning');
+                    
+                    const cdnSources = [
+                        'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js',
+                        'https://unpkg.com/face-api.js@0.22.2/dist/face-api.min.js',
+                        'https://cdn.jsdelivr.net/npm/face-api.js/dist/face-api.min.js',
+                        'https://unpkg.com/face-api.js/dist/face-api.min.js'
+                    ];
+                    
+                    for (const cdnUrl of cdnSources) {
+                        try {
+                            addLog(`Tentando carregar de: ${cdnUrl}`);
+                            const script = document.createElement('script');
+                            script.src = cdnUrl;
+                            script.async = true;
+                            
+                            await new Promise((resolve, reject) => {
+                                script.onload = resolve;
+                                script.onerror = reject;
+                                document.head.appendChild(script);
+                            });
+                            
+                            addLog('Face-API.js carregado com sucesso');
+                            break;
+                        } catch (error) {
+                            addLog(`Falha ao carregar de ${cdnUrl}: ${error.message}`);
+                            continue;
+                        }
+                    }
+                }
+                
+                if (typeof faceapi === 'undefined') {
+                    throw new Error('Face-API.js não pôde ser carregado');
+                }
+                
+                addLog('Carregando modelos de detecção...');
+                
+                // Tentar diferentes CDNs para modelos
+                const modelUrls = [
+                    'https://cdn.jsdelivr.net/npm/face-api.js/weights',
+                    'https://unpkg.com/face-api.js/weights',
+                    'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights'
+                ];
+                
+                let modelLoaded = false;
+                for (const modelUrl of modelUrls) {
+                    try {
+                        addLog(`Carregando modelo de: ${modelUrl}`);
+                        await faceapi.nets.tinyFaceDetector.loadFromUri(modelUrl);
+                        addLog('Modelo carregado com sucesso');
+                        modelLoaded = true;
+                        break;
+                    } catch (error) {
+                        addLog(`Falha ao carregar modelo de ${modelUrl}: ${error.message}`);
+                        continue;
+                    }
+                }
+                
+                if (modelLoaded) {
+                    updateStatus('Face-API.js carregado', 'success');
+                    return true;
+                } else {
+                    throw new Error('Não foi possível carregar modelos');
+                }
+                
+            } catch (error) {
+                addLog(`Erro no Face-API.js: ${error.message}`, 'error');
+                updateStatus('Face-API.js falhou', 'error');
+                return false;
+            }
+        }
+        
+        async function startFaceDetection() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const indicator = document.getElementById('faceIndicator');
+            
+            // Aguardar o vídeo carregar
+            await new Promise(resolve => {
+                video.addEventListener('loadeddata', resolve, { once: true });
+            });
+
+            // Configurar canvas
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+
+            addLog('Iniciando detecção facial...');
+            updateStatus('Detecção ativa', 'success');
+
+            // Iniciar detecção contínua
+            faceDetectionInterval = setInterval(async () => {
+                if (video.paused || video.ended) return;
+
+                try {
+                    // Detectar rostos
+                    const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions());
+
+                    // Limpar canvas
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    if (detections && detections.length > 0) {
+                        // Rosto detectado
+                        indicator.classList.add('detected');
+                        indicator.classList.remove('processing');
+                        indicator.querySelector('.face-status').innerHTML = `✅ ${detections.length} rosto(s) detectado(s)`;
+
+                        // Desenhar retângulos
+                        detections.forEach(detection => {
+                            const box = detection.box || detection.detection?.box;
+                            if (box) {
+                                ctx.strokeStyle = '#28a745';
+                                ctx.lineWidth = 2;
+                                ctx.strokeRect(box.x, box.y, box.width, box.height);
+                            }
+                        });
+
+                        addLog(`Detectado(s) ${detections.length} rosto(s)`, 'success');
+                    } else {
+                        // Nenhum rosto detectado
+                        indicator.classList.remove('detected', 'processing');
+                        indicator.querySelector('.face-status').innerHTML = '🔍 Procurando rosto...';
+                    }
+                } catch (error) {
+                    addLog(`Erro na detecção: ${error.message}`, 'error');
+                    indicator.classList.remove('detected', 'processing');
+                    indicator.querySelector('.face-status').innerHTML = '❌ Erro na detecção';
+                }
+            }, 200);
+        }
+        
+        function stopFaceDetection() {
+            if (faceDetectionInterval) {
+                clearInterval(faceDetectionInterval);
+                faceDetectionInterval = null;
+                addLog('Detecção parada');
+            }
+        }
+        
+        async function iniciarTeste() {
+            addLog('=== INICIANDO TESTE DE DETECÇÃO AUTOMÁTICA ===');
+            
+            // Limpar status anterior
+            document.getElementById('status-content').innerHTML = '';
+            
+            // Teste 1: Câmera
+            const cameraOk = await initCamera();
+            if (!cameraOk) {
+                addLog('Teste falhou: Câmera não disponível', 'error');
+                return;
+            }
+            
+            // Teste 2: Face-API.js
+            const faceApiOk = await initFaceAPI();
+            if (!faceApiOk) {
+                addLog('Teste falhou: Face-API.js não disponível', 'error');
+                updateStatus('Use modo manual', 'warning');
+                return;
+            }
+            
+            // Teste 3: Detecção
+            await startFaceDetection();
+            
+            addLog('=== TESTE INICIADO COM SUCESSO ===');
+            addLog('Posicione seu rosto na câmera para testar a detecção automática');
+        }
+        
+        // Inicializar quando a página carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog('Página de teste carregada');
+            addLog('Clique em "Iniciar Teste" para começar');
+        });
+        
+        // Limpar recursos quando a página for fechada
+        window.addEventListener('beforeunload', function() {
+            stopFaceDetection();
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+        });
+    </script>
+</body>
+</html> 

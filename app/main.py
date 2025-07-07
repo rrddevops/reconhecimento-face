@@ -42,6 +42,22 @@ class WebhookRequest(BaseModel):
 async def root():
     return FileResponse("app/static/index.html")
 
+@app.get("/consulta")
+async def consulta():
+    return FileResponse("app/static/consulta.html")
+
+@app.get("/diagnostico")
+async def diagnostico():
+    return FileResponse("app/static/diagnostico.html")
+
+@app.get("/teste-deteccao")
+async def teste_deteccao():
+    return FileResponse("app/static/teste_deteccao.html")
+
+@app.get("/teste-navegacao")
+async def teste_navegacao():
+    return FileResponse("app/static/teste_navegacao.html")
+
 @app.post("/webhook")
 async def webhook(request: WebhookRequest):
     """Endpoint para receber notificações de reconhecimento"""
@@ -97,13 +113,30 @@ async def debug_webhook():
         "webhook_url": webhook_handler.webhook_url,
         "enable_logging": webhook_handler.enable_logging,
         "timeout": webhook_handler.timeout,
+        "min_interval": webhook_handler.min_interval,
         "connectivity_test": connectivity_test,
+        "cache_status": webhook_handler.get_cache_status(),
         "environment": {
             "WEBHOOK_URL": os.getenv('WEBHOOK_URL'),
             "WEBHOOK_LOGGING": os.getenv('WEBHOOK_LOGGING'),
-            "WEBHOOK_TIMEOUT": os.getenv('WEBHOOK_TIMEOUT')
+            "WEBHOOK_TIMEOUT": os.getenv('WEBHOOK_TIMEOUT'),
+            "WEBHOOK_MIN_INTERVAL": os.getenv('WEBHOOK_MIN_INTERVAL')
         }
     })
+
+@app.post("/webhook-cache/clear")
+async def clear_webhook_cache():
+    """Endpoint para limpar o cache de webhooks"""
+    webhook_handler.sent_webhooks.clear()
+    return JSONResponse(content={
+        "status": "success",
+        "message": "Cache de webhooks limpo com sucesso"
+    })
+
+@app.get("/webhook-cache/status")
+async def webhook_cache_status():
+    """Endpoint para verificar status do cache de webhooks"""
+    return JSONResponse(content=webhook_handler.get_cache_status())
 
 @app.get("/test-cpf/{cpf}")
 async def test_cpf(cpf: str):
@@ -193,5 +226,42 @@ async def reconhecer(request: ReconhecerRequest):
                 print(f"Webhook enviado: {'Sucesso' if webhook_success else 'Falha'}")
                 return JSONResponse(content={"status": "match", "cpf": usuario.cpf})
         return JSONResponse(content={"status": "nao_encontrado"}, status_code=404)
+    finally:
+        db.close() 
+
+@app.get("/usuarios")
+async def listar_usuarios():
+    """Endpoint para listar todos os usuários cadastrados"""
+    db = SessionLocal()
+    try:
+        usuarios = db.query(Usuario).all()
+        usuarios_list = []
+        for usuario in usuarios:
+            usuarios_list.append({
+                "id": usuario.id,
+                "cpf": usuario.cpf,
+                "imagem_base64": usuario.imagem_base64[:100] + "..." if len(usuario.imagem_base64) > 100 else usuario.imagem_base64
+            })
+        return JSONResponse(content={"status": "success", "usuarios": usuarios_list, "total": len(usuarios_list)})
+    except Exception as e:
+        return JSONResponse(content={"status": "erro", "mensagem": f"Erro ao listar usuários: {str(e)}"}, status_code=500)
+    finally:
+        db.close()
+
+@app.delete("/usuarios/{cpf}")
+async def deletar_usuario(cpf: str):
+    """Endpoint para deletar um usuário pelo CPF"""
+    db = SessionLocal()
+    try:
+        usuario = db.query(Usuario).filter(Usuario.cpf == cpf).first()
+        if not usuario:
+            return JSONResponse(content={"status": "erro", "mensagem": "Usuário não encontrado"}, status_code=404)
+        
+        db.delete(usuario)
+        db.commit()
+        return JSONResponse(content={"status": "success", "mensagem": f"Usuário {cpf} deletado com sucesso"})
+    except Exception as e:
+        db.rollback()
+        return JSONResponse(content={"status": "erro", "mensagem": f"Erro ao deletar usuário: {str(e)}"}, status_code=500)
     finally:
         db.close() 
