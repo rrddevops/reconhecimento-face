@@ -57,41 +57,7 @@ class WebhookHandler:
                 print(f"Erro ao enviar webhook para CPF {cpf}: {e}")
             return False
     
-    async def enviar_cadastro(self, cpf: str) -> bool:
-        """
-        Envia webhook quando novo usuário é cadastrado
-        
-        Args:
-            cpf: CPF do usuário cadastrado
-            
-        Returns:
-            bool: True se webhook foi enviado com sucesso
-        """
-        payload = {
-            "cpf": cpf
-        }
-        
-        try:
-            async with httpx.AsyncClient(follow_redirects=True) as client:
-                response = await client.post(
-                    self.webhook_url,
-                    json=payload,
-                    timeout=self.timeout,
-                    headers={"Content-Type": "application/json"}
-                )
-                
-                if self.enable_logging:
-                    print(f"Webhook de cadastro enviado para CPF {cpf}: {response.status_code}")
-                    if response.status_code not in [200, 201, 202]:
-                        print(f"Erro no webhook de cadastro: {response.text}")
-                        print(f"URL final: {response.url}")
-                
-                return response.status_code in [200, 201, 202]
-                
-        except Exception as e:
-            if self.enable_logging:
-                print(f"Erro ao enviar webhook de cadastro para CPF {cpf}: {e}")
-            return False
+
 
 # Instância global do webhook handler
 webhook_handler = WebhookHandler() 

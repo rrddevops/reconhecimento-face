@@ -105,6 +105,53 @@ async def debug_webhook():
         }
     })
 
+@app.get("/test-cpf/{cpf}")
+async def test_cpf(cpf: str):
+    """Endpoint para testar validação de CPF"""
+    import re
+    
+    # Limpar CPF
+    cpf_limpo = re.sub(r'[^\d]', '', cpf)
+    
+    # Validar CPF
+    if len(cpf_limpo) != 11:
+        return JSONResponse(content={
+            "cpf_original": cpf,
+            "cpf_limpo": cpf_limpo,
+            "valido": False,
+            "erro": "CPF deve ter 11 dígitos"
+        })
+    
+    # Verificar se todos os dígitos são iguais
+    if cpf_limpo == cpf_limpo[0] * 11:
+        return JSONResponse(content={
+            "cpf_original": cpf,
+            "cpf_limpo": cpf_limpo,
+            "valido": False,
+            "erro": "CPF não pode ter todos os dígitos iguais"
+        })
+    
+    # Calcular dígitos verificadores
+    soma = sum(int(cpf_limpo[i]) * (10 - i) for i in range(9))
+    resto = 11 - (soma % 11)
+    dv1 = 0 if resto < 2 else resto
+    
+    soma = sum(int(cpf_limpo[i]) * (11 - i) for i in range(10))
+    resto = 11 - (soma % 11)
+    dv2 = 0 if resto < 2 else resto
+    
+    valido = cpf_limpo[9] == str(dv1) and cpf_limpo[10] == str(dv2)
+    
+    return JSONResponse(content={
+        "cpf_original": cpf,
+        "cpf_limpo": cpf_limpo,
+        "valido": valido,
+        "dv1_calculado": dv1,
+        "dv1_recebido": int(cpf_limpo[9]),
+        "dv2_calculado": dv2,
+        "dv2_recebido": int(cpf_limpo[10])
+    })
+
 @app.post("/cadastro")
 async def cadastro(request: CadastroRequest):
     encoding = get_face_encoding_from_base64(request.imagem_base64)
@@ -115,9 +162,6 @@ async def cadastro(request: CadastroRequest):
         usuario = Usuario(cpf=request.cpf, imagem_base64=request.imagem_base64, face_encoding=encoding)
         db.add(usuario)
         db.commit()
-        
-        # Enviar webhook de novo cadastro
-        await webhook_handler.enviar_cadastro(request.cpf)
         
         return JSONResponse(content={"status": "recebido", "cpf": request.cpf})
     except IntegrityError:

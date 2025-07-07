@@ -37,6 +37,8 @@ python run.py
 - `POST /reconhecer` - Reconhece rosto e retorna CPF
 - `POST /webhook` - Recebe notificações de reconhecimento
 - `GET /test-webhook` - Testa o webhook manualmente
+- `GET /test-cpf/{cpf}` - Testa validação de CPF
+- `GET /debug-webhook` - Debug da configuração do webhook
 
 ## 🔔 Sistema de Webhook
 
@@ -50,13 +52,7 @@ Quando um usuário é reconhecido, o sistema envia:
 }
 ```
 
-### **Novo Cadastro**
-Quando um novo usuário é cadastrado:
-```json
-{
-    "cpf": "12345678901"
-}
-```
+> **Nota:** O webhook é enviado **apenas** durante o reconhecimento facial, não durante o cadastro.
 
 ### **Configuração do Webhook**
 

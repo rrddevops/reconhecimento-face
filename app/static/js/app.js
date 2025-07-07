@@ -77,12 +77,22 @@ function showMessage(text, type = 'info') {
 
 // Função para validar CPF
 function validarCPF(cpf) {
+    // Remover caracteres não numéricos
     cpf = cpf.replace(/[^\d]/g, '');
     
-    if (cpf.length !== 11) return false;
+    console.log('Validando CPF:', cpf);
+    
+    // Verificar se tem 11 dígitos
+    if (cpf.length !== 11) {
+        console.log('CPF inválido: não tem 11 dígitos');
+        return false;
+    }
     
     // Verificar se todos os dígitos são iguais
-    if (/^(\d)\1{10}$/.test(cpf)) return false;
+    if (/^(\d)\1{10}$/.test(cpf)) {
+        console.log('CPF inválido: todos os dígitos são iguais');
+        return false;
+    }
     
     // Validar primeiro dígito verificador
     let soma = 0;
@@ -100,7 +110,10 @@ function validarCPF(cpf) {
     resto = 11 - (soma % 11);
     let dv2 = resto < 2 ? 0 : resto;
     
-    return cpf.charAt(9) == dv1 && cpf.charAt(10) == dv2;
+    const isValid = cpf.charAt(9) == dv1 && cpf.charAt(10) == dv2;
+    console.log(`CPF ${cpf}: DV1=${cpf.charAt(9)}, DV2=${cpf.charAt(10)}, Calculado: DV1=${dv1}, DV2=${dv2}, Válido: ${isValid}`);
+    
+    return isValid;
 }
 
 // Função para formatar CPF
@@ -156,6 +169,10 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         
         const cpf = document.getElementById('cpf').value;
+        const cpfLimpo = cpf.replace(/\D/g, '');
+        
+        console.log('CPF original:', cpf);
+        console.log('CPF limpo:', cpfLimpo);
         
         if (!validarCPF(cpf)) {
             showMessage('CPF inválido!', 'error');
@@ -172,13 +189,16 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.innerHTML = '<span class="loading"></span>Cadastrando...';
 
         try {
+            const payload = { 
+                cpf: cpfLimpo,
+                imagem_base64: imagemBase64 
+            };
+            console.log('Enviando payload:', { cpf: payload.cpf, imagem_size: payload.imagem_base64.length });
+            
             const response = await fetch('http://localhost:8001/cadastro', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    cpf: cpf.replace(/\D/g, ''),
-                    imagem_base64: imagemBase64 
-                })
+                body: JSON.stringify(payload)
             });
 
             const data = await response.json();
